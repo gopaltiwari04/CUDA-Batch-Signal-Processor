@@ -1,30 +1,27 @@
-# Example README.md file for Coursera Projects
+# CUDA Batch Signal Processor 🚀
 
-## Overview
+**Course:** CUDA at Scale for the Enterprise (Coursera)  
+**Project Type:** Independent Project (Peer-Graded Assignment)
 
-## Code Organization
+## 📖 Project Description
 
-```bin/```
-This folder should hold all binary/executable code that is built automatically or manually. Executable code should have use the .exe extension or programming language-specific extension.
+This project fulfills the assignment requirement to process a large amount of data (specifically, hundreds of small inputs) using GPU computation. 
 
-```data/```
-This folder should hold all example data in any format. If the original data is rather large or can be brought in via scripts, this can be left blank in the respository, so that it doesn't require major downloads when all that is desired is the code/structure.
+The **CUDA Batch Signal Processor** is a C++/CUDA application that simulates the batch ingestion and parallel processing of 100 individual signal arrays. Instead of relying on slow CPU-bound iterations, this program leverages the immense parallel processing power of a GPU to process the data, demonstrating a highly scalable architecture for signal processing.
 
-```lib/```
-Any libraries that are not installed via the Operating System-specific package manager should be placed here, so that it is easier for inclusion/linking.
+## ⚙️ Code Description & Architecture
 
-```src/```
-The source code should be placed here in a hierarchical fashion, as appropriate.
+The program is contained within `batch_signals.cu` and follows a strict Host-to-Device-to-Host workflow:
 
-```README.md```
-This file should hold the description of the project so that anyone cloning or deciding if they want to clone this repository can understand its purpose to help with their decision.
+1. **Initialization:** The host (CPU) loops through 100 batch iterations. For each iteration, it generates a synthetic signal array containing 1,024 data points (floats).
+2. **Memory Management:** Memory is allocated on the GPU (`cudaMalloc`), and the raw signal data is transferred from the Host to the Device (`cudaMemcpy`).
+3. **GPU Computation (The Kernel):** A custom CUDA kernel named `processSignal` is launched. The grid and block dimensions are calculated dynamically based on the signal size (using 256 threads per block). The kernel applies a mathematical amplification (multiplying each data point by 2.0) across all points in parallel.
+4. **Retrieval & Cleanup:** The processed signal is copied back to the Host, verified, and the GPU memory is freed to prevent memory leaks during the 100-iteration batch run.
 
-```INSTALL```
-This file should hold the human-readable set of instructions for installing the code so that it can be executed. If possible it should be organized around different operating systems, so that it can be done by as many people as possible with different constraints.
+## 🛠️ How to Build and Run
 
-```Makefile or CMAkeLists.txt or build.sh```
-There should be some rudimentary scripts for building your project's code in an automatic fashion.
+To compile and execute this code in a CUDA-enabled environment (such as the Coursera Lab Terminal), run the following commands:
 
-```run.sh```
-An optional script used to run your executable code, either with or without command-line arguments.
-
+**1. Compile the code using the NVIDIA CUDA Compiler:**
+```bash
+nvcc batch_signals.cu -o batch_signals
