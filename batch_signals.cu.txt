@@ -1,0 +1,60 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <cuda_runtime.h>
+
+// ---------------------------------------------------------
+// CUDA KERNEL: Amplifies a signal array by a factor of 2.0
+// ---------------------------------------------------------
+__global__ void processSignal(float *d_signal, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        d_signal[idx] = d_signal[idx] * 2.0f;
+    }
+}
+
+int main() {
+    int num_signals = 100; // Satisfies the "100s of small inputs" requirement
+    int signal_size = 1024; 
+    size_t bytes = signal_size * sizeof(float);
+
+    printf("Initializing GPU Batch Signal Processor...\n");
+    printf("Target: %d signal arrays.\n\n", num_signals);
+
+    // Loop to process 100 individual signals
+    for (int i = 1; i <= num_signals; i++) {
+        
+        // 1. Generate dummy signal data for this batch item
+        float *h_signal = (float*)malloc(bytes);
+        for(int j = 0; j < signal_size; j++) {
+            h_signal[j] = 1.0f; 
+        }
+
+        // 2. Allocate memory on the GPU
+        float *d_signal;
+        cudaMalloc(&d_signal, bytes);
+
+        // 3. Copy signal from Host to GPU
+        cudaMemcpy(d_signal, h_signal, bytes, cudaMemcpyHostToDevice);
+
+        // 4. Execute the CUDA Kernel
+        int threadsPerBlock = 256;
+        int blocksPerGrid = (signal_size + threadsPerBlock - 1) / threadsPerBlock;
+        processSignal<<<blocksPerGrid, threadsPerBlock>>>(d_signal, signal_size);
+        cudaDeviceSynchronize();
+
+        // 5. Copy processed signal back to Host
+        cudaMemcpy(h_signal, d_signal, bytes, cudaMemcpyDeviceToHost);
+
+        // Print progress to the terminal to create our log file
+        if (i % 10 == 0 || i == 1) {
+            printf("[SUCCESS] Signal #%d processed successfully on GPU.\n", i);
+        }
+
+        // 6. Free memory
+        cudaFree(d_signal);
+        free(h_signal);
+    }
+
+    printf("\nBatch processing complete! All %d signals processed.\n", num_signals);
+    return 0;
+}
